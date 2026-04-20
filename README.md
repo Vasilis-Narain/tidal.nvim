@@ -49,10 +49,10 @@ require("tidal").setup({
     max_bytes = 262144,
   },
   highlights = {
-    user      = { link = "Title" },
-    user_body = { link = "Comment" },
-    assistant = { link = "Special" },
-    body      = { link = "Normal" },
+    user      = { fg = "#7aa2f7", bold = true },    -- blue
+    user_body = { fg = "#bb9af7", italic = true },  -- purple
+    assistant = { fg = "#e0af68", bold = true },    -- orange
+    body      = { fg = "#c0caf5" },                 -- soft white
   },
   keymaps = {
     toggle_terminal   = "<leader>tt",

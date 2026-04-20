@@ -17,10 +17,10 @@ M.defaults = {
     max_bytes = 256 * 1024,
   },
   highlights = {
-    user      = { link = "Title" },
-    user_body = { link = "Comment" },
-    assistant = { link = "Special" },
-    body      = { link = "Normal" },
+    user      = { fg = "#7aa2f7", bold = true },
+    user_body = { fg = "#bb9af7", italic = true },
+    assistant = { fg = "#e0af68", bold = true },
+    body      = { fg = "#c0caf5" },
   },
   keymaps = {
     toggle_terminal   = "<leader>tt",
