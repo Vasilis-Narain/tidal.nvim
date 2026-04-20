@@ -1,0 +1,122 @@
+*tidal.txt*  Floating terminal + Claude AI session split for Neovim
+
+==============================================================================
+CONTENTS                                                        *tidal-contents*
+
+  1. Introduction ................................. |tidal-intro|
+  2. Requirements ................................. |tidal-requirements|
+  3. Setup ........................................ |tidal-setup|
+  4. Commands ..................................... |tidal-commands|
+  5. Keymaps ...................................... |tidal-keymaps|
+  6. Highlights ................................... |tidal-highlights|
+  7. Configuration ................................ |tidal-config|
+
+==============================================================================
+1. INTRODUCTION                                                    *tidal-intro*
+
+tidal.nvim provides two features:
+  - A floating terminal that toggles over your editor
+  - A Claude AI split terminal with a Telescope session history picker
+
+==============================================================================
+2. REQUIREMENTS                                               *tidal-requirements*
+
+  - Neovim 0.10+
+  - telescope.nvim (https://github.com/nvim-telescope/telescope.nvim)
+  - Claude CLI (https://claude.ai/code) — for the Claude split only
+
+==============================================================================
+3. SETUP                                                          *tidal-setup*
+
+Call `require("tidal").setup(opts)` with your lazy.nvim spec or init.lua.
+Calling setup with no arguments applies all defaults.
+
+Example (lazy.nvim): >lua
+  {
+    "your-username/tidal.nvim",
+    dependencies = { "nvim-telescope/telescope.nvim" },
+    config = function()
+      require("tidal").setup()
+    end,
+  }
+<
+
+==============================================================================
+4. COMMANDS                                                     *tidal-commands*
+
+:Tidal                  Toggle the floating terminal.
+:TidalClaude            Toggle the Claude AI side split.
+:TidalPick              Open the Telescope Claude session picker.
+
+==============================================================================
+5. KEYMAPS                                                       *tidal-keymaps*
+
+Default keymaps (set in normal mode by `setup()`):
+
+  <leader>tt    Toggle floating terminal
+  <leader>tc    Toggle Claude split (narrow, 33%)
+  <leader>tC    Toggle Claude split (wide, 50%)
+  <leader>tlc   Open Claude session picker
+
+Disable all keymaps: >lua
+  require("tidal").setup({ keymaps = {} })
+<
+Disable a specific keymap: >lua
+  require("tidal").setup({ keymaps = { toggle_terminal = false } })
+<
+
+==============================================================================
+6. HIGHLIGHTS                                                 *tidal-highlights*
+
+  TidalUser        User message prefix in previewer
+  TidalUserBody    User message body in previewer
+  TidalAssistant   Assistant header in previewer
+  TidalBody        Assistant body text in previewer
+
+Defaults link to standard groups: Title, Comment, Special, Normal.
+
+Override example: >lua
+  require("tidal").setup({
+    highlights = {
+      user      = { fg = "#7aa2f7", bold = true },
+      assistant = { fg = "#e0af68", bold = true },
+    },
+  })
+<
+
+==============================================================================
+7. CONFIGURATION                                                  *tidal-config*
+
+Full defaults: >lua
+  require("tidal").setup({
+    terminal = {
+      shell  = nil,       -- nil = auto-detect (Git bash on Windows, $SHELL elsewhere)
+      width  = 0.8,       -- fraction of screen width
+      height = 0.8,       -- fraction of screen height
+      border = "rounded",
+    },
+    claude = {
+      cmd        = "claude",   -- path to Claude CLI binary
+      fraction   = 0.33,       -- default split width fraction
+      statusline = " Claude",
+    },
+    sessions = {
+      max       = 20,           -- max sessions shown in picker
+      max_bytes = 262144,       -- max bytes read from JSONL for preview
+    },
+    highlights = {
+      user      = { link = "Title" },
+      user_body = { link = "Comment" },
+      assistant = { link = "Special" },
+      body      = { link = "Normal" },
+    },
+    keymaps = {
+      toggle_terminal   = "<leader>tt",
+      toggle_claude     = "<leader>tc",
+      toggle_claude_big = "<leader>tC",
+      claude_pick       = "<leader>tlc",
+    },
+  })
+<
+
+vim:tw=78:ts=8:ft=help:norl:
