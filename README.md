@@ -1,6 +1,6 @@
 # tidal.nvim
 
-Floating terminal + Claude code session split for Neovim.
+Minimal Floating terminal + Claude code session split for Neovim.
 
 ## Features
 
