@@ -33,7 +33,7 @@ Calling setup with no arguments applies all defaults.
 
 Example (lazy.nvim): >lua
   {
-    "your-username/tidal.nvim",
+    "Vasilis-Narain/tidal.nvim",
     dependencies = { "nvim-telescope/telescope.nvim" },
     config = function()
       require("tidal").setup()

@@ -19,7 +19,7 @@ Floating terminal + Claude AI session split for Neovim.
 ```lua
 -- lazy.nvim
 {
-  "your-username/tidal.nvim",
+  "Vasilis-Narain/tidal.nvim",
   dependencies = { "nvim-telescope/telescope.nvim" },
   config = function()
     require("tidal").setup()
