@@ -29,7 +29,7 @@ Minimal Floating terminal + Claude code session split for Neovim.
 
 ## Setup
 
-Call `setup()` once. All options are optional — defaults apply if omitted.
+Call `setup()` once. All options are optional — defaults apply if omitted..
 
 ```lua
 require("tidal").setup({
