@@ -50,6 +50,7 @@ function M.toggle()
     state.buf, state.win = r.buf, r.win
     if vim.bo[state.buf].buftype ~= "terminal" then
       local shell = preferred_shell(require("tidal.config").options.terminal.shell)
+      if type(shell) == "string" then shell = { shell } end
       vim.fn.jobstart(shell, { term = true, cwd = cwd })
     end
     vim.cmd("startinsert")
