@@ -11,6 +11,7 @@ M.defaults = {
     cmd        = "claude",
     fraction   = 0.33,
     statusline = " Claude",
+    escape     = "<C-q>",
   },
   sessions = {
     max       = 20,

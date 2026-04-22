@@ -52,7 +52,9 @@ function M.open_split(opts)
     end
     vim.fn.jobstart(argv, { term = true, cwd = cwd })
     vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { buffer = buf })
-    vim.keymap.set("t", "<C-q>", "<Esc>",         { buffer = buf })
+    if cfg.escape and cfg.escape ~= "" then
+      vim.keymap.set("t", cfg.escape, "<Esc>", { buffer = buf })
+    end
   end
 
   M.state.win = win

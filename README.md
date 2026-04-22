@@ -43,6 +43,7 @@ require("tidal").setup({
     cmd        = "claude",   -- path to Claude CLI binary
     fraction   = 0.33,       -- default split width
     statusline = " Claude",
+    escape     = "<C-q>",    -- terminal-mode key that sends <Esc> to Claude (set false/"" to disable)
   },
   sessions = {
     max       = 20,
@@ -79,6 +80,16 @@ require("tidal").setup({
 | `<leader>tc` | Toggle Claude split (33% width) |
 | `<leader>tC` | Toggle Claude split (50% width) |
 | `<leader>tlc` | Claude session picker |
+
+Inside the Claude split (terminal mode), `<C-q>` sends `<Esc>` to Claude so you
+can cancel prompts or dismiss menus without leaving terminal mode. Rebind or
+disable via `claude.escape` in `setup()`:
+
+```lua
+require("tidal").setup({
+  claude = { escape = "<C-g>" }, -- or escape = false to disable
+})
+```
 
 Disable all keymaps: `setup({ keymaps = {} })`
 

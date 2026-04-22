@@ -58,6 +58,15 @@ Default keymaps (set in normal mode by `setup()`):
   <leader>tC    Toggle Claude split (wide, 50%)
   <leader>tlc   Open Claude session picker
 
+Inside the Claude split (terminal mode), <C-q> sends <Esc> to Claude so you
+can cancel prompts or dismiss menus without leaving terminal mode. Configure
+via `claude.escape` — set to another lhs to rebind, or `false`/`""` to
+disable: >lua
+  require("tidal").setup({
+    claude = { escape = "<C-g>" },
+  })
+<
+
 Disable all keymaps: >lua
   require("tidal").setup({ keymaps = {} })
 <
@@ -99,6 +108,7 @@ Full defaults: >lua
       cmd        = "claude",   -- path to Claude CLI binary
       fraction   = 0.33,       -- default split width fraction
       statusline = " Claude",
+      escape     = "<C-q>",    -- terminal-mode key sending <Esc> to Claude
     },
     sessions = {
       max       = 20,           -- max sessions shown in picker
