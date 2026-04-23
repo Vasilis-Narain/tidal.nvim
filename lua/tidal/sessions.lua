@@ -151,7 +151,61 @@ local function scan_dir_sessions(dir, source_cwd, sessions, seen)
   end
 end
 
-local function list_sessions(cwd)
+local function order_file_path(picker_cwd)
+  return vim.fs.joinpath(project_dir_for(picker_cwd), ".tidal-order.json")
+end
+
+local function read_order(picker_cwd)
+  local path = order_file_path(picker_cwd)
+  local f = io.open(path, "r")
+  if not f then return {} end
+  local data = f:read("*a") or ""
+  f:close()
+  local ok, decoded = pcall(vim.json.decode, data)
+  if ok and type(decoded) == "table" and type(decoded.order) == "table" then
+    local out = {}
+    for _, id in ipairs(decoded.order) do
+      if type(id) == "string" then table.insert(out, id) end
+    end
+    return out
+  end
+  return {}
+end
+
+local function write_order(picker_cwd, order)
+  local dir = project_dir_for(picker_cwd)
+  if not vim.uv.fs_stat(dir) then return false end
+  local path = order_file_path(picker_cwd)
+  local tmp = path .. ".tmp"
+  local f = io.open(tmp, "w")
+  if not f then return false end
+  f:write(vim.json.encode({ order = order }))
+  f:close()
+  local ok, err = os.rename(tmp, path)
+  if not ok then
+    pcall(os.remove, tmp)
+    vim.notify("tidal: order write failed: " .. tostring(err), vim.log.levels.ERROR)
+    return false
+  end
+  return true
+end
+
+local function apply_order(sessions, order)
+  local pos = {}
+  for i, id in ipairs(order) do pos[id] = i end
+  local ordered, unordered = {}, {}
+  for _, s in ipairs(sessions) do
+    if pos[s.id] then table.insert(ordered, s) else table.insert(unordered, s) end
+  end
+  table.sort(ordered,   function(a, b) return pos[a.id] < pos[b.id] end)
+  table.sort(unordered, function(a, b) return a.mtime > b.mtime end)
+  local merged = {}
+  for _, s in ipairs(ordered)   do table.insert(merged, s) end
+  for _, s in ipairs(unordered) do table.insert(merged, s) end
+  return merged
+end
+
+local function list_sessions(cwd, picker_cwd)
   local cfg = require("tidal.config").options.sessions
   local sessions, seen = {}, {}
   local root = norm_path(vim.uv.cwd() or cwd)
@@ -164,29 +218,59 @@ local function list_sessions(cwd)
     if parent == dir then break end
     dir = parent
   end
-  table.sort(sessions, function(a, b) return a.mtime > b.mtime end)
+  local order = read_order(picker_cwd or cwd)
+  sessions = apply_order(sessions, order)
   if #sessions > cfg.max then
     for i = #sessions, cfg.max + 1, -1 do sessions[i] = nil end
   end
   return sessions
 end
 
-function M.landing(after_select, restore_row)
+function M.move_chat(picker_cwd, id, direction)
+  if direction ~= 1 and direction ~= -1 then return false end
+  local sessions = list_sessions(picker_cwd, picker_cwd)
+  local idx
+  for i, s in ipairs(sessions) do
+    if s.id == id then idx = i; break end
+  end
+  if not idx then return false end
+  local target = idx + direction
+  if target < 1 or target > #sessions then return false end
+  sessions[idx], sessions[target] = sessions[target], sessions[idx]
+  local new_order = {}
+  for _, s in ipairs(sessions) do table.insert(new_order, s.id) end
+  return write_order(picker_cwd, new_order)
+end
+
+function M.prune_order(picker_cwd, id)
+  local order = read_order(picker_cwd)
+  local changed, new_order = false, {}
+  for _, oid in ipairs(order) do
+    if oid == id then changed = true else table.insert(new_order, oid) end
+  end
+  if changed then write_order(picker_cwd, new_order) end
+end
+
+function M.landing(after_select)
   local cfg      = require("tidal.config").options
   local claude   = require("tidal.claude")
   local cwd      = vim.api.nvim_buf_get_name(0)
   if cwd == "" then cwd = vim.uv.cwd() else cwd = vim.fn.fnamemodify(cwd, ":p:h") end
-  local sessions = list_sessions(cwd)
+  local picker_cwd = cwd
 
-  local entries = { { id = nil, label = "[ New chat ]", preview = "[ New chat ]" } }
-  for _, s in ipairs(sessions) do
-    table.insert(entries, {
-      id      = s.id,
-      label   = string.format("%-10s  %s", relative_time(s.mtime), s.preview),
-      preview = s.preview,
-      path    = s.path,
-      cwd     = s.cwd,
-    })
+  local function build_entries()
+    local sessions = list_sessions(cwd, picker_cwd)
+    local out = { { id = nil, label = "[ New chat ]", preview = "[ New chat ]" } }
+    for _, s in ipairs(sessions) do
+      table.insert(out, {
+        id      = s.id,
+        label   = string.format("%-10s  %s", relative_time(s.mtime), s.preview),
+        preview = s.preview,
+        path    = s.path,
+        cwd     = s.cwd,
+      })
+    end
+    return out
   end
 
   local pickers      = require("telescope.pickers")
@@ -259,7 +343,11 @@ function M.landing(after_select, restore_row)
     end,
   })
 
-  local picker = pickers.new({
+  local entry_maker = function(e)
+    return { value = e, display = e.label, ordinal = e.label }
+  end
+
+  local layout_opts = {
     previewer       = transcript_previewer,
     layout_strategy = "horizontal",
     layout_config   = {
@@ -271,16 +359,11 @@ function M.landing(after_select, restore_row)
     sorting_strategy = "descending",
     border           = true,
     borderchars      = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
-  }, {
-    prompt_title = "Claude sessions",
-    finder       = finders.new_table({
-      results      = entries,
-      entry_maker  = function(e)
-        return { value = e, display = e.label, ordinal = e.label }
-      end,
-    }),
-    sorter  = conf.generic_sorter({}),
-    attach_mappings = function(prompt_bufnr, map)
+  }
+
+  local open
+  local function make_attach(entries)
+    return function(prompt_bufnr, map)
       actions.select_default:replace(function()
         local sel = action_state.get_selected_entry()
         actions.close(prompt_bufnr)
@@ -312,8 +395,6 @@ function M.landing(after_select, restore_row)
           vim.notify("tidal: refusing to delete non-jsonl path", vim.log.levels.ERROR)
           return
         end
-        local picker = action_state.get_current_picker(prompt_bufnr)
-        local row = picker and picker:get_selection_row() or nil
         local choice = vim.fn.confirm("Delete chat?\n" .. (sel.value.preview or ""), "&Yes\n&No", 2)
         if choice ~= 1 then return end
         if vim.fn.delete(sel.value.path) ~= 0 then
@@ -323,27 +404,72 @@ function M.landing(after_select, restore_row)
         if claude.state.selection and claude.state.selection.id == sel.value.id then
           claude.state.selection = nil
         end
+        M.prune_order(picker_cwd, sel.value.id)
+        local del_idx
+        for i, e in ipairs(entries) do
+          if e.id == sel.value.id then del_idx = i; break end
+        end
+        local mode = vim.fn.mode() == "n" and "normal" or "insert"
         actions.close(prompt_bufnr)
-        vim.schedule(function() M.landing(after_select, row) end)
+        open({ index = del_idx, mode = mode })
       end
 
-      local delkey = cfg.sessions.delete_key
+      local function make_move(direction)
+        return function()
+          local sel = action_state.get_selected_entry()
+          if not sel or not sel.value or not sel.value.id then return end
+          if not M.move_chat(picker_cwd, sel.value.id, direction) then return end
+          local mode = vim.fn.mode() == "n" and "normal" or "insert"
+          actions.close(prompt_bufnr)
+          open({ focus_id = sel.value.id, mode = mode })
+        end
+      end
+
+      local delkey  = cfg.sessions.delete_key
+      local upkey   = cfg.sessions.move_up_key
+      local downkey = cfg.sessions.move_down_key
       if delkey and delkey ~= "" then
         map("i", delkey, delete_selected)
         map("n", delkey, delete_selected)
       end
+      if upkey and upkey ~= "" then
+        map("i", upkey, make_move(-1))
+        map("n", upkey, make_move(-1))
+      end
+      if downkey and downkey ~= "" then
+        map("i", downkey, make_move(1))
+        map("n", downkey, make_move(1))
+      end
       return true
-    end,
-  })
-  picker:find()
-
-  if restore_row then
-    vim.schedule(function()
-      local max = picker.manager and picker.manager:num_results() or 0
-      local target = math.min(restore_row, math.max(max - 1, 0))
-      pcall(picker.set_selection, picker, target)
-    end)
+    end
   end
+
+  open = function(restore)
+    local entries = build_entries()
+    local target_index
+    if type(restore) == "table" then
+      if restore.focus_id then
+        for i, e in ipairs(entries) do
+          if e.id == restore.focus_id then target_index = i; break end
+        end
+      elseif restore.index then
+        target_index = math.min(restore.index, #entries)
+      end
+    end
+    pickers.new(layout_opts, {
+      prompt_title            = "Claude sessions",
+      default_selection_index = target_index,
+      initial_mode            = (type(restore) == "table" and restore.mode) or "insert",
+      finder                  = finders.new_table({
+        results     = entries,
+        entry_maker = entry_maker,
+      }),
+      sorter          = conf.generic_sorter({}),
+      attach_mappings = make_attach(entries),
+    }):find()
+  end
+
+  open()
 end
 
 return M

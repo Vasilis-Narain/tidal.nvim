@@ -46,9 +46,11 @@ require("tidal").setup({
     escape     = "<C-q>",    -- terminal-mode key that sends <Esc> to Claude (set false/"" to disable)
   },
   sessions = {
-    max        = 20,
-    max_bytes  = 262144,
-    delete_key = "<M-d>",     -- in picker: delete chat .jsonl under cursor (set false/"" to disable)
+    max           = 20,
+    max_bytes     = 262144,
+    delete_key    = "<M-d>",     -- in picker: delete chat .jsonl under cursor (set false/"" to disable)
+    move_up_key   = "<C-d>",     -- in picker: move chat up (set false/"" to disable)
+    move_down_key = "<C-u>",     -- in picker: move chat down (set false/"" to disable)
   },
   highlights = {
     user      = { fg = "#7aa2f7", bold = true },    -- blue
@@ -103,6 +105,11 @@ require("tidal").setup({
   sessions = { delete_key = "<C-x>" }, -- or delete_key = false to disable
 })
 ```
+
+`<C-d>` / `<C-u>` move the highlighted chat up or down in the picker. Order
+persists across Neovim sessions in `.tidal-order.json` next to the chat files.
+Rebind via `sessions.move_up_key` / `sessions.move_down_key` (set to `false` or
+`""` to disable, which restores Telescope's default preview-scroll mappings).
 
 ## Highlights
 

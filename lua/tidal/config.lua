@@ -14,9 +14,11 @@ M.defaults = {
     escape     = "<C-q>",
   },
   sessions = {
-    max        = 20,
-    max_bytes  = 256 * 1024,
-    delete_key = "<M-d>",
+    max           = 20,
+    max_bytes     = 256 * 1024,
+    delete_key    = "<M-d>",
+    move_up_key   = "<C-d>",
+    move_down_key = "<C-u>",
   },
   highlights = {
     user      = { fg = "#7aa2f7", bold = true },
