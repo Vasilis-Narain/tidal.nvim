@@ -181,9 +181,9 @@ local function write_order(picker_cwd, order)
   if not f then return false end
   f:write(vim.json.encode({ order = order }))
   f:close()
-  local ok, err = os.rename(tmp, path)
+  local ok, err = vim.uv.fs_rename(tmp, path)
   if not ok then
-    pcall(os.remove, tmp)
+    pcall(vim.uv.fs_unlink, tmp)
     vim.notify("tidal: order write failed: " .. tostring(err), vim.log.levels.ERROR)
     return false
   end
