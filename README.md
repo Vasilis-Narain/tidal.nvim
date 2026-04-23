@@ -131,6 +131,12 @@ require("tidal").setup({
 })
 ```
 
+## Security notes
+
+- `claude.cmd` is executed as argv[0] via `jobstart` (resolved through `$PATH`). Only set it to a binary you trust — a malicious `cmd` value pasted from an untrusted config runs arbitrary code on toggle.
+- `terminal.shell` is executed the same way. Same trust boundary applies.
+- The session picker reads and deletes `.jsonl` files under `~/.claude/projects/<encoded-cwd>/`. The delete action rejects symlinks and paths outside the project dir, and the resume flow rejects session ids that are not UUID-shaped, so a malicious file dropped into that directory cannot smuggle CLI flags or redirect deletes.
+
 ## License
 
 MIT
