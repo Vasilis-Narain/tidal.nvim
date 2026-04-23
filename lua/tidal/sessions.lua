@@ -171,7 +171,7 @@ local function list_sessions(cwd)
   return sessions
 end
 
-function M.landing(after_select)
+function M.landing(after_select, restore_row)
   local cfg      = require("tidal.config").options
   local claude   = require("tidal.claude")
   local cwd      = vim.api.nvim_buf_get_name(0)
@@ -259,7 +259,7 @@ function M.landing(after_select)
     end,
   })
 
-  pickers.new({
+  local picker = pickers.new({
     previewer       = transcript_previewer,
     layout_strategy = "horizontal",
     layout_config   = {
@@ -280,7 +280,7 @@ function M.landing(after_select)
       end,
     }),
     sorter  = conf.generic_sorter({}),
-    attach_mappings = function(prompt_bufnr, _)
+    attach_mappings = function(prompt_bufnr, map)
       actions.select_default:replace(function()
         local sel = action_state.get_selected_entry()
         actions.close(prompt_bufnr)
@@ -302,9 +302,45 @@ function M.landing(after_select)
           end
         end
       end)
+
+      local function delete_selected()
+        local sel = action_state.get_selected_entry()
+        if not sel or not sel.value or not sel.value.id or not sel.value.path then
+          return
+        end
+        if not sel.value.path:match("%.jsonl$") then
+          vim.notify("tidal: refusing to delete non-jsonl path", vim.log.levels.ERROR)
+          return
+        end
+        local picker = action_state.get_current_picker(prompt_bufnr)
+        local row = picker and picker:get_selection_row() or nil
+        local choice = vim.fn.confirm("Delete chat?\n" .. (sel.value.preview or ""), "&Yes\n&No", 2)
+        if choice ~= 1 then return end
+        if vim.fn.delete(sel.value.path) ~= 0 then
+          vim.notify("tidal: delete failed: " .. sel.value.path, vim.log.levels.ERROR)
+          return
+        end
+        if claude.state.selection and claude.state.selection.id == sel.value.id then
+          claude.state.selection = nil
+        end
+        actions.close(prompt_bufnr)
+        vim.schedule(function() M.landing(after_select, row) end)
+      end
+
+      map("i", "<M-d>", delete_selected)
+      map("n", "<M-d>", delete_selected)
       return true
     end,
-  }):find()
+  })
+  picker:find()
+
+  if restore_row then
+    vim.schedule(function()
+      local max = picker.manager and picker.manager:num_results() or 0
+      local target = math.min(restore_row, math.max(max - 1, 0))
+      pcall(picker.set_selection, picker, target)
+    end)
+  end
 end
 
 return M
