@@ -47,6 +47,11 @@ function M.open_split(opts)
     })
     local argv = { cfg.cmd }
     if opts.resume then
+      if type(opts.resume) ~= "string"
+          or not opts.resume:match("^[%x]+%-[%x]+%-[%x]+%-[%x]+%-[%x]+$") then
+        vim.notify("tidal: refusing to resume invalid session id", vim.log.levels.ERROR)
+        return
+      end
       table.insert(argv, "--resume")
       table.insert(argv, opts.resume)
     end
