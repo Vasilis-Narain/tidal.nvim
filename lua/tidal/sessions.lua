@@ -395,6 +395,17 @@ function M.landing(after_select)
           vim.notify("tidal: refusing to delete non-jsonl path", vim.log.levels.ERROR)
           return
         end
+        local lst = vim.uv.fs_lstat(sel.value.path)
+        if not lst or lst.type ~= "file" then
+          vim.notify("tidal: refusing to delete non-regular file", vim.log.levels.ERROR)
+          return
+        end
+        local expected_dir = norm_path(project_dir_for(sel.value.cwd or picker_cwd))
+        local actual = norm_path(sel.value.path)
+        if actual:sub(1, #expected_dir + 1) ~= expected_dir .. "/" then
+          vim.notify("tidal: refusing to delete path outside project dir", vim.log.levels.ERROR)
+          return
+        end
         local choice = vim.fn.confirm("Delete chat?\n" .. (sel.value.preview or ""), "&Yes\n&No", 2)
         if choice ~= 1 then return end
         if vim.fn.delete(sel.value.path) ~= 0 then
