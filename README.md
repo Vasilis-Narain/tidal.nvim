@@ -83,33 +83,11 @@ require("tidal").setup({
 | `<leader>tc` | Toggle Claude split (33% width) |
 | `<leader>tC` | Toggle Claude split (50% width) |
 | `<leader>tlc` | Claude session picker |
+| `<C-q>` | Inside Claude split: send `<Esc>` to Claude |
+| `<M-d>` | Inside session picker: delete chat under cursor |
+| `<C-d>` / `<C-u>` | Inside session picker: move chat down / up |
 
-Inside the Claude split (terminal mode), `<C-q>` sends `<Esc>` to Claude so you
-can cancel prompts or dismiss menus without leaving terminal mode. Rebind or
-disable via `claude.escape` in `setup()`:
-
-```lua
-require("tidal").setup({
-  claude = { escape = "<C-g>" }, -- or escape = false to disable
-})
-```
-
-Disable all keymaps: `setup({ keymaps = {} })`
-
-Inside the session picker (`<leader>tlc`), `<M-d>` deletes the chat under the
-cursor — the `.jsonl` file is removed from disk and the picker refreshes.
-Rebind or disable via `sessions.delete_key`:
-
-```lua
-require("tidal").setup({
-  sessions = { delete_key = "<C-x>" }, -- or delete_key = false to disable
-})
-```
-
-`<C-d>` / `<C-u>` move the highlighted chat up or down in the picker. Order
-persists across Neovim sessions in `.tidal-order.json` next to the chat files.
-Rebind via `sessions.move_up_key` / `sessions.move_down_key` (set to `false` or
-`""` to disable, which restores Telescope's default preview-scroll mappings).
+See [KEYBINDS.md](KEYBINDS.md) for the full list, defaults, and rebind/disable examples.
 
 ## Highlights
 
