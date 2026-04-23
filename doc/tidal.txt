@@ -10,6 +10,7 @@ CONTENTS                                                        *tidal-contents*
   5. Keymaps ...................................... |tidal-keymaps|
   6. Highlights ................................... |tidal-highlights|
   7. Configuration ................................ |tidal-config|
+  8. Security ..................................... |tidal-security|
 
 ==============================================================================
 1. INTRODUCTION                                                    *tidal-intro*
@@ -19,7 +20,7 @@ tidal.nvim provides two features:
   - A Claude AI split terminal with a Telescope session history picker
 
 ==============================================================================
-2. REQUIREMENTS                                               *tidal-requirements*
+2. REQUIREMENTS                                            *tidal-requirements*
 
   - Neovim 0.10+
   - telescope.nvim (https://github.com/nvim-telescope/telescope.nvim)
@@ -58,21 +59,48 @@ Default keymaps (set in normal mode by `setup()`):
   <leader>tC    Toggle Claude split (wide, 50%)
   <leader>tlc   Open Claude session picker
 
-Inside the Claude split (terminal mode), <C-q> sends <Esc> to Claude so you
-can cancel prompts or dismiss menus without leaving terminal mode. Configure
-via `claude.escape` — set to another lhs to rebind, or `false`/`""` to
-disable: >lua
+Inside the Claude split (terminal mode):
+
+  <Esc>         Leave terminal mode (standard <C-\><C-n>; not configurable)
+  <C-q>         Send <Esc> to Claude — cancel prompts or dismiss menus
+                without leaving terminal mode
+
+Configure <C-q> via `claude.escape` — set to another lhs to rebind, or
+`false`/`""` to disable: >lua
   require("tidal").setup({
     claude = { escape = "<C-g>" },
   })
 <
 
-Disable all keymaps: >lua
+Inside the session picker (`:TidalPick` / `<leader>tlc`):
+
+  <M-d>         Delete chat under cursor — removes the .jsonl from disk
+                and refreshes the picker
+  <C-d>         Move highlighted chat down one slot
+  <C-u>         Move highlighted chat up one slot
+
+Chat order persists across Neovim sessions in `.tidal-order.json` next to
+the chat files. Configure via `sessions.delete_key`, `sessions.move_up_key`,
+`sessions.move_down_key`. Set a key to `false`/`""` to disable — disabling
+the move keys restores Telescope's default preview-scroll mappings on
+<C-u>/<C-d>: >lua
+  require("tidal").setup({
+    sessions = {
+      delete_key    = "<C-x>",
+      move_up_key   = false,
+      move_down_key = false,
+    },
+  })
+<
+
+Disable all global keymaps: >lua
   require("tidal").setup({ keymaps = {} })
 <
 Disable a specific keymap: >lua
   require("tidal").setup({ keymaps = { toggle_terminal = false } })
 <
+
+See also KEYBINDS.md in the repo root for the full reference table.
 
 ==============================================================================
 6. HIGHLIGHTS                                                 *tidal-highlights*
@@ -111,8 +139,11 @@ Full defaults: >lua
       escape     = "<C-q>",    -- terminal-mode key sending <Esc> to Claude
     },
     sessions = {
-      max       = 20,           -- max sessions shown in picker
-      max_bytes = 262144,       -- max bytes read from JSONL for preview
+      max           = 20,           -- max sessions shown in picker
+      max_bytes     = 262144,       -- max bytes read from JSONL for preview
+      delete_key    = "<M-d>",      -- picker: delete chat under cursor
+      move_up_key   = "<C-d>",      -- picker: move chat up
+      move_down_key = "<C-u>",      -- picker: move chat down
     },
     highlights = {
       user      = { fg = "#7aa2f7", bold = true },
@@ -128,5 +159,17 @@ Full defaults: >lua
     },
   })
 <
+
+==============================================================================
+8. SECURITY                                                    *tidal-security*
+
+  - `claude.cmd` is executed as argv[0] via |jobstart()| (resolved through
+    $PATH). Only set it to a binary you trust — a malicious value pasted
+    from an untrusted config runs arbitrary code on toggle.
+  - `terminal.shell` is executed the same way. Same trust boundary applies.
+  - The session picker reads and deletes .jsonl files under
+    `~/.claude/projects/<encoded-cwd>/`. Delete rejects symlinks and paths
+    outside the project dir; the resume flow rejects session ids that are
+    not UUID-shaped.
 
 vim:tw=78:ts=8:ft=help:norl:
