@@ -327,8 +327,11 @@ function M.landing(after_select, restore_row)
         vim.schedule(function() M.landing(after_select, row) end)
       end
 
-      map("i", "<M-d>", delete_selected)
-      map("n", "<M-d>", delete_selected)
+      local delkey = cfg.sessions.delete_key
+      if delkey and delkey ~= "" then
+        map("i", delkey, delete_selected)
+        map("n", delkey, delete_selected)
+      end
       return true
     end,
   })

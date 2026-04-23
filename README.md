@@ -46,8 +46,9 @@ require("tidal").setup({
     escape     = "<C-q>",    -- terminal-mode key that sends <Esc> to Claude (set false/"" to disable)
   },
   sessions = {
-    max       = 20,
-    max_bytes = 262144,
+    max        = 20,
+    max_bytes  = 262144,
+    delete_key = "<M-d>",     -- in picker: delete chat .jsonl under cursor (set false/"" to disable)
   },
   highlights = {
     user      = { fg = "#7aa2f7", bold = true },    -- blue
@@ -92,6 +93,16 @@ require("tidal").setup({
 ```
 
 Disable all keymaps: `setup({ keymaps = {} })`
+
+Inside the session picker (`<leader>tlc`), `<M-d>` deletes the chat under the
+cursor — the `.jsonl` file is removed from disk and the picker refreshes.
+Rebind or disable via `sessions.delete_key`:
+
+```lua
+require("tidal").setup({
+  sessions = { delete_key = "<C-x>" }, -- or delete_key = false to disable
+})
+```
 
 ## Highlights
 
