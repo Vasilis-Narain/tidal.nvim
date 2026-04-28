@@ -7,10 +7,13 @@ Minimal Floating terminal + Claude code session split for Neovim.
 ## Features
 
 - **Floating terminal** — toggle a centered floating window with your shell
+
 ![Screenshot of Floating Terminal](/img/floaterminal.png)
 - **Claude split** — open Claude CLI in a side split, persisted across toggles
+
 ![Screenshot of Claude in Vertical Split](/img/v_split.png)
 - **Session picker** — Telescope-based picker for Claude chat history with live transcript preview
+
 ![Screenshot of Claude session picker](/img/picker.png)
 
 ## Requirements
