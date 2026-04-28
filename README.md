@@ -2,9 +2,9 @@
 
 Minimal Floating terminal + Claude code session split for Neovim.
 
-![Screenshot of Claude session picker][/img/picker.png]
-![Screenshot of Claude in Vertical Split][/img/v_split.png]
-![Screenshot of Floating Terminal][/img/floaterminal.png]
+![Screenshot of Claude session picker](/img/picker.png)
+![Screenshot of Claude in Vertical Split](/img/v_split.png)
+![Screenshot of Floating Terminal](/img/floaterminal.png)
 
 ## Features
 
