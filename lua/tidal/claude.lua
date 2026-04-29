@@ -7,6 +7,14 @@ M.state = {
   last_fraction = 0.33,
 }
 
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter", "FocusGained", "CursorHold" }, {
+  group = vim.api.nvim_create_augroup("TidalClaudeChecktime", { clear = true }),
+  callback = function()
+    if vim.fn.getcmdwintype() == "" then vim.cmd("checktime") end
+  end,
+})
+
 local function current_file_dir()
   local f = vim.api.nvim_buf_get_name(0)
   if f == "" then return vim.uv.cwd() end
